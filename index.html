@@ -1,64 +1,114 @@
 <!DOCTYPE html>
-<svg width="960" height="960" font-family="sans-serif" font-size="10" text-anchor="middle"></svg>
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<meta charset="utf-8">
+
+<head>
+	<style>
+
+  .bar{
+    fill: steelblue;
+  }
+
+  .bar:hover{
+    fill: brown;
+  }
+
+	.axis {
+	  font: 10px sans-serif;
+	}
+
+	.axis path,
+	.axis line {
+	  fill: none;
+	  stroke: #000;
+	  shape-rendering: crispEdges;
+	}
+
+	</style>
+</head>
+
+<body>
+	
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
 <script>
+// set the dimensions of the canvas
+var margin = {top: 20, right: 20, bottom: 70, left: 40},
+    width = 600 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
 
-var svg = d3.select("svg"),
-    width = +svg.attr("width"),
-    height = +svg.attr("height");
 
-var format = d3.format(",d");
+// set the ranges
+var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
 
-var color = d3.scaleOrdinal(d3.schemeCategory20c);
+var y = d3.scale.linear().range([height, 0]);
 
-var pack = d3.pack()
-    .size([width, height])
-    .padding(1.5);
+// define the axis
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
 
-d3.csv("./flare.csv", function(d) {
-  d.value = +d.value;
-  if (d.value) return d;
-}, function(error, classes) {
-  if (error) throw error;
 
-  var root = d3.hierarchy({children: classes})
-      .sum(function(d) { return d.value; })
-      .each(function(d) {
-        if (id = d.data.id) {
-          var id, i = id.lastIndexOf(".");
-          d.id = id;
-          d.package = id.slice(0, i);
-          d.class = id.slice(i + 1);
-        }
-      });
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .ticks(10);
 
-  var node = svg.selectAll(".node")
-    .data(pack(root).leaves())
-    .enter().append("g")
-      .attr("class", "node")
-      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 
-  node.append("circle")
-      .attr("id", function(d) { return d.id; })
-      .attr("r", function(d) { return d.r; })
-      .style("fill", function(d) { return color(d.package); });
+// add the SVG element
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
 
-  node.append("clipPath")
-      .attr("id", function(d) { return "clip-" + d.id; })
-    .append("use")
-      .attr("xlink:href", function(d) { return "#" + d.id; });
 
-  node.append("text")
-      .attr("clip-path", function(d) { return "url(#clip-" + d.id + ")"; })
-    .selectAll("tspan")
-    .data(function(d) { return d.class.split(/(?=[A-Z][^A-Z])/g); })
-    .enter().append("tspan")
-      .attr("x", 0)
-      .attr("y", function(d, i, nodes) { return 13 + (i - nodes.length / 2 - 0.5) * 10; })
-      .text(function(d) { return d; });
+// load the data
+d3.json("data.json", function(error, data) {
 
-  node.append("title")
-      .text(function(d) { return d.id + "\n" + format(d.value); });
+    data.forEach(function(d) {
+        d.Letter = d.Letter;
+        d.Freq = +d.Freq;
+    });
+	
+  // scale the range of the data
+  x.domain(data.map(function(d) { return d.Letter; }));
+  y.domain([0, d3.max(data, function(d) { return d.Freq; })]);
+
+  // add axis
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", "-.55em")
+      .attr("transform", "rotate(-90)" );
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 5)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Frequency");
+
+
+  // Add bar chart
+  svg.selectAll("bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.Letter); })
+      .attr("width", x.rangeBand())
+      .attr("y", function(d) { return y(d.Freq); })
+      .attr("height", function(d) { return height - y(d.Freq); });
+
 });
 
 </script>
+
+</body>
