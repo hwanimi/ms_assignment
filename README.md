@@ -12,3 +12,8 @@ wumpus world in chapter7
 ### version 2
 - by CNF logic
 - not yet
+
+
+### reference
+- Priority to read : http://alumni.soe.ucsc.edu/~gottlieb/Carthage/courses/f05/AI/wumpus.clp
+- summary of clips : http://www2.cs.siu.edu/~rahimi/cs537/slides/big-2
